@@ -51,7 +51,7 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
     mapping(uint => uint[]) bookedDates;
     mapping(uint => mapping(uint => bool)) isDateBooked;
     mapping(address => mapping(uint => bool)) hasBooked;
-    mapping(uint => bool) appartmentExist;
+    mapping(uint => bool) apartmentExist;
     
     constructor(uint _taxPercent, uint _securityFee) {
     taxPercent = _taxPercent;
@@ -59,33 +59,56 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
   }
 
 
-  function createApartment(string memory name, string memory description, string memory location, string memory images, uint rooms, uint price) public{
-    require(bytes(name).length > 0, 'Name cannot be empty');
-    require(bytes(description).length > 0, 'Description cannot be empty');
-    require(bytes(location).length > 0, 'Location cannot be empty');
-    require(bytes(images).length > 0, 'Images cannot be empty');
-    require(rooms > 0, 'Rooms cannot be zero');
-    require(price > 0 ether, 'Price cannot be zero');
+    function createApartment(string memory name, string memory description, string memory location, string memory images, uint rooms, uint price) public{
+        require(bytes(name).length > 0, 'Name cannot be empty');
+        require(bytes(description).length > 0, 'Description cannot be empty');
+        require(bytes(location).length > 0, 'Location cannot be empty');
+        require(bytes(images).length > 0, 'Images cannot be empty');
+        require(rooms > 0, 'Rooms cannot be zero');
+        require(price > 0 ether, 'Price cannot be zero');
 
-    _totalApartments.increment();
+        _totalApartments.increment();
 
-    Apartment memory apartment;
+        Apartment memory apartment;
 
-    apartment.id = _totalApartments.current();
-    apartment.name = name;
-    apartment.description = description;
-    apartment.location = location;
-    apartment.images = images;
-    apartment.rooms = rooms;
-    apartment.price = price;
-    apartment.owner = msg.sender;
-    apartment.timestamp = currentTimestamp();
-    appartmentExist[apartment.id] = true;
-    apartments[_totalApartments.current()] = apartment;
+        apartment.id = _totalApartments.current();
+        apartment.name = name;
+        apartment.description = description;
+        apartment.location = location;
+        apartment.images = images;
+        apartment.rooms = rooms;
+        apartment.price = price;
+        apartment.owner = msg.sender;
+        apartment.timestamp = currentTimestamp();
+        apartmentExist[apartment.id] = true;
+        apartments[_totalApartments.current()] = apartment;
 
-  }
+    }
 
-  function currentTimestamp() internal view returns (uint256) {
-    return (block.timestamp * 1000) + 1000;
-  }
+    function currentTimestamp() internal view returns (uint256) {
+        return (block.timestamp * 1000) + 1000;
+    }
+
+    function updateApartment(uint id, string memory name, string memory description, string memory location, string memory images, uint rooms, uint price) public{
+        require(apartmentExist[id] == true, 'Appartment not found');
+        require(msg.sender == apartments[id].owner, 'Unauthorized personnel, owner only');
+        require(bytes(name).length > 0, 'Name cannot be empty');
+        require(bytes(description).length > 0, 'Description cannot be empty');
+        require(bytes(location).length > 0, 'Location cannot be empty');
+        require(bytes(images).length > 0, 'Images cannot be empty');
+        require(rooms > 0, 'Rooms cannot be zero');
+        require(price > 0 ether, 'Price cannot be zero');
+
+        Apartment memory apartment = apartments[id];
+        apartment.name = name;
+        apartment.description = description;
+        apartment.location = location;
+        apartment.images = images;
+        apartment.rooms = rooms;
+        apartment.price = price;
+        apartments[id] = apartment;
+
+        
+    }
+  
 }
