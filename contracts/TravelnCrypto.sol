@@ -276,10 +276,13 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
   }
 
   function claimFunds(uint apartment_id, uint booking_id) public { //For claiming funds in the event there is no check in
+    
+    Booking memory booking = bookingsOf[apartment_id][booking_id];
+    
     require(msg.sender == apartments[apartment_id].owner || msg.sender == owner(), 
     "Error: You are not authorized to claim any funds. If this is a mistake contact support");
     require(!bookingsOf[apartment_id][booking_id].checked, "Apartment is already checked In on this date no need to claim funds"); //No need to claim funds if person is already checked in
-    
+    require(booking.date < currentTimestamp(), "Not allowed to claim funds before the booking date!!");
     uint price = bookingsOf[apartment_id][booking_id].price;
     uint fee = (price * taxPercent) /100;
 
