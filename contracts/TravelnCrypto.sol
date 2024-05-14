@@ -256,4 +256,39 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
         return reviewsOf[apartment_id];
     }
   
+
+    function getQualifiedReviewers(uint apartment_id) public view returns (address[] memory Tenants) {
+        uint256 available;
+        for (uint i = 0; i < bookingsOf[apartment_id].length; i++) {
+            if (bookingsOf[apartment_id][i].checked){
+                available++;
+            } 
+        }
+
+        Tenants = new address[](available);
+
+        uint256 index;
+        for (uint i = 0; i < bookingsOf[apartment_id].length; i++) {
+            if (bookingsOf[apartment_id][i].checked) {
+                Tenants[index++] = bookingsOf[apartment_id][i].tenant;
+            }
+        }
+  }
+
+  function claimFunds(uint apartment_id, uint booking_id) public { //For claiming funds in the event there is no check in
+    require(msg.sender == apartments[apartment_id].owner || msg.sender == owner(), 
+    "Error: You are not authorized to claim any funds. If this is a mistake contact support");
+    require(!bookingsOf[apartment_id][booking_id].checked, "Apartment is already checked In on this date no need to claim funds"); //No need to claim funds if person is already checked in
+    
+    uint price = bookingsOf[apartment_id][booking_id].price;
+    uint fee = (price * taxPercent) /100;
+
+    payTo(apartments[apartment_id].owner, (price - fee));
+    payTo(owner(), fee);
+    payTo(msg.sender, securityFee);
+
+
+  }
+
+
 }
