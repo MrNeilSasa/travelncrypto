@@ -218,5 +218,42 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
     payTo(owner(), collateral);
     payTo(msg.sender, booking.price);
   }
+
+    function getUnavailableDates(uint apartment_id) public view returns (uint[] memory) {
+        return bookedDates[apartment_id];
+    }
+
+    function getBooking(uint apartment_id, uint booking_id) public view returns (Booking memory) {
+        return bookingsOf[apartment_id][booking_id];
+    }
+
+    function getAllBookings(uint apartment_id) public view returns (Booking[] memory) {
+        return bookingsOf[apartment_id];
+    }
+
+    function tenantBooked(uint apartment_id) public view returns (bool) {
+        return hasBooked[msg.sender][apartment_id];
+    }
+
+    function addReview(uint apartment_id, string memory message) public {
+        require(apartmentExist[apartment_id], "Apartment is not available");
+        require(hasBooked[msg.sender][apartment_id], "Must book apartment before you can review");
+        require(bytes(message).length > 0, "You cannot leave an empty review!!");
+
+        Review memory review;
+
+        review.apartment_id = apartment_id;
+        review.id = reviewsOf[apartment_id].length;
+        review.reviewText = message;
+        review.timestamp = currentTimestamp();
+        review.owner = msg.sender;
+
+        reviewsOf[apartment_id].push(review);
+    }
+
+
+    function getReviews(uint apartment_id) public view returns (Review[] memory) {
+        return reviewsOf[apartment_id];
+    }
   
 }
