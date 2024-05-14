@@ -143,7 +143,7 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
         require(msg.value >= (apartments[apartment_id].price * dates.length) + (((apartments[apartment_id].price * dates.length) * securityFee)/100 ),
         "Insufficent fund!" );
 
-        require(datesAreCleared(apartment_id, dates), 'Error: This Date is already booked!! ');
+        require(dateAvailability(apartment_id, dates), 'Error: This Date is already booked!! ');
 
         for(uint i =0; i < dates.length; i++){
             Booking memory booking;
@@ -158,7 +158,7 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
         }
     }
 
-    function datesAreCleared(uint apartment_id, uint[] memory dates) internal view returns (bool){
+    function dateAvailability(uint apartment_id, uint[] memory dates) internal view returns (bool){
         bool lastCheck = true;
         for(uint i = 0; i < dates.length; i++){
             for(uint j = 0; j < bookedDates[apartment_id].length; j++){
@@ -169,5 +169,54 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
         }
         return lastCheck;
     }
+
+    function checkIn(uint apartment_id, uint booking_id) public {
+        Booking memory booking = bookingsOf[apartment_id][booking_id];
+        require(msg.sender == booking.tenant, "Error: Unauthorized tenant!!");
+        require(!booking.checked, "Apartment already checked for this date Double checking is not premitted!!");
+
+        bookingsOf[apartment_id][booking_id].checked = true;
+        uint tax = (booking.price * taxPercent) / 100;
+        uint fee = (booking.price * securityFee) / 100;
+
+        hasBooked[msg.sender][apartment_id] = true;
+
+        payTo(apartments[apartment_id].owner, (booking.price - tax)); //Pays the the owner of the apartment
+        payTo(owner(), tax); //Pays the owner of the contract the tax feed
+        payTo(msg.sender, fee); //Pays the tennat back their secuirty fee
+    }
+
+    function payTo(address to, uint256 amount) internal {
+        (bool success, ) = payable(to).call{ value: amount }('');
+        require(success); //This require is the resaon we dont use .transfer because if it fails without this require the enitre function will revert
+  }
+
+  function refundBooking(uint apartment_id, uint booking_id) public nonReentrant() {
+    Booking memory booking = bookingsOf[apartment_id][booking_id];
+    require(!booking.checked, "Cannot refund after being checked IN!!!");
+    require(isDateBooked[apartment_id][booking.date], "You did not book for this date!!");
+
+    if(msg.sender != owner()){
+        require(msg.sender == booking.tenant, "Error: You are not assigned to this booking");
+        require(booking.date > currentTimestamp(), "Error: The booking date has already passed, you cannot refund.");
+    }
+
+    bookingsOf[apartment_id][booking_id].cancelled = true;
+    isDateBooked[apartment_id][booking.date] = false;
+
+    uint lastIndex = bookedDates[apartment_id].length - 1;
+    uint lastBookingID = bookedDates[apartment_id][lastIndex];
+    
+    bookedDates[apartment_id][booking_id] = lastBookingID;
+    bookedDates[apartment_id].pop();
+
+
+    uint fee = (booking.price * securityFee) / 100;
+    uint collateral = fee / 2;
+
+    payTo(apartments[apartment_id].owner, collateral);
+    payTo(owner(), collateral);
+    payTo(msg.sender, booking.price);
+  }
   
 }
