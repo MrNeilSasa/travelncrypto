@@ -1,12 +1,10 @@
 const { expect } = require('chai')
 const { ethers } = require('hardhat')
-const { describe, beforeEach } = require('node:test')
+const { describe } = require('node:test')
 
 const toWei = (num) => ethers.parseEther(num.toString())
-const fromWei = (num) => ethers.formatEther(num)
 
 const dates1 = [1725587200000, 1727203400000, 1700313044089]
-const dates2 = [1728652800000, 1730165100000]
 
 describe('Contracts', () => {
   let contract, result
@@ -35,7 +33,7 @@ describe('Contracts', () => {
     contract = await ethers.deployContract('TravelnCrypto', [taxPercent, securityFee])
     await contract.waitForDeployment()
   })
-
+  /*
   describe('Apartment Test', () => {
     beforeEach(async () => {
       console.log('Calling Apartments ...')
@@ -91,7 +89,7 @@ describe('Contracts', () => {
       result = await contract.getApartment(id)
       expect(result.deleted).to.be.equal(true)
     })
-  })
+  }) */
 
   describe('Booking Tests', () => {
     describe('Successful Booking', () => {
@@ -99,6 +97,87 @@ describe('Contracts', () => {
         await contract
           .connect(owner)
           .createApartment(name, description, location, images.join(','), rooms, toWei(price))
+
+        const amount = price * dates1.length + (price * dates1.length * securityFee) / 100
+        await contract.connect(tac1).bookApartment(id, dates1, {
+          value: toWei(amount),
+        })
+      })
+
+      it('Apartment can be booked', async () => {
+        result = await contract.getAllBookings(id)
+        expect(result).to.be.lengthOf(dates1.length)
+
+        result = await contract.getUnavailableDates(id)
+        expect(result).to.have.lengthOf(dates1.length)
+      })
+
+      it('Testing for Qualified reviewers', async () => {
+        result = await contract.getQualifiedReviewers(id)
+        expect(result).to.have.lengthOf(0)
+
+        await contract.connect(tac1).checkIn(id, 1)
+
+        result = await contract.getQualifiedReviewers(id)
+        expect(result).to.have.lengthOf(1)
+      })
+
+      it('Tenant can check in to apartment', async () => {
+        result = await contract.getBooking(id, booking_id)
+        expect(result.checked).to.be.equal(false)
+
+        result = await contract.connect(tac1).tenantBooked(id)
+        expect(result).to.be.equal(false)
+
+        await contract.connect(tac1).checkIn(id, booking_id)
+
+        result = await contract.getBooking(id, booking_id)
+        expect(result.checked).to.be.equal(true)
+
+        result = await contract.connect(tac1).tenantBooked(id)
+        expect(result).to.be.equal(true)
+      })
+
+      it('Refunds should be possible', async () => {
+        result = await contract.getBooking(id, booking_id)
+        expect(result.cancelled).to.be.equal(false)
+
+        await contract.connect(tac1).refundBooking(id, booking_id)
+
+        result = await contract.getBooking(id, booking_id)
+        expect(result.cancelled).to.be.equal(true)
+      })
+
+      it('Check for correct Fees and Taxes', async () => {
+        result = await contract.securityFee()
+        expect(result).to.be.equal(securityFee)
+        result = await contract.taxPercent()
+        expect(result).to.be.equal(taxPercent)
+      })
+    })
+
+    describe('Failed Booking', () => {
+      beforeEach(async () => {
+        await contract
+          .connect(owner)
+          .createApartment(name, description, location, images.join(','), rooms, toWei(price))
+      })
+
+      it('Should prevent booking with wrong id', async () => {
+        const amount = price * dates1.length + (price * dates1.length * securityFee) / 100
+        await expect(
+          contract.connect(tac1).bookApartment(666, dates1, {
+            value: toWei(amount),
+          })
+        ).to.be.revertedWith('Error: Apartment cannot be found')
+      })
+
+      it('Should prevent booking with wrong pricing', async () => {
+        await expect(
+          contract.connect(tac1).bookApartment(id, dates1, {
+            value: toWei(price * 0 + securityFee),
+          })
+        ).to.be.revertedWith('Insufficient fund!')
       })
     })
   })

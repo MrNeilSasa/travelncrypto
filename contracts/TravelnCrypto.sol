@@ -144,7 +144,7 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
     function bookApartment(uint apartment_id, uint[] memory dates) public payable {
         require(apartmentExist[apartment_id], "Error: Apartment cannot be found");
         require(msg.value >= (apartments[apartment_id].price * dates.length) + (((apartments[apartment_id].price * dates.length) * securityFee)/100 ),
-        "Insufficent fund!" );
+        "Insufficient fund!" );
 
         require(dateAvailability(apartment_id, dates), 'Error: This Date is already booked!! ');
 
