@@ -89,23 +89,26 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
         return (block.timestamp * 1000) + 1000;
     }
 
-    function getApartment() public view returns(Apartment[] memory Apartments) {
-        uint256 available;
-        for(uint i = 1; i <= _totalApartments.current(); i++) {
+
+    function getAllApartments() public view returns(Apartment[] memory Apartments) {
+            uint256 available;
+            for (uint i = 1; i <= _totalApartments.current(); i++) {
+            if (!apartments[i].deleted) available++;
+            }
+
+            Apartments = new Apartment[](available);
+
+            uint256 index;
+            for (uint i = 1; i <= _totalApartments.current(); i++) {
             if (!apartments[i].deleted) {
-                available++;
+                Apartments[index++] = apartments[i];
             }
-        }
-
-        Apartments = new Apartment[](available);
-
-        uint256 index;
-        for(uint i=1; i<= _totalApartments.current(); i++){
-            if(!apartments[i].deleted){
-                Apartments[index] = apartments[i];
-                index++;
             }
-        }
+        
+    }
+
+    function getApartment(uint id) public view returns (Apartment memory) {
+        return apartments[id];
     }
 
     function updateApartment(uint id, string memory name, string memory description, string memory location, string memory images, uint rooms, uint price) public{
