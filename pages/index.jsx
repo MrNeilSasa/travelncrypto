@@ -1,5 +1,5 @@
 import Head from 'next/head'
-import { generateFakeApartment } from '@/utils/fakeData'
+import { getAllApartments } from '@/services/blockchain'
 import { Category, Collection } from '@/components'
 
 export default function Home({ apartmentsData }) {
@@ -11,13 +11,13 @@ export default function Home({ apartmentsData }) {
       </Head>
 
       <Category />
-      <Collection appartments={apartmentsData} />
+      <Collection apartments={apartmentsData} />
     </div>
   )
 }
 
 export const getServerSideProps = async () => {
-  const apartmentsData = generateFakeApartment(5)
+  const apartmentsData = await getAllApartments()
 
   return {
     props: {

@@ -1,12 +1,12 @@
 import { Card } from '.'
 
-const Collection = ({ appartments }) => {
+const Collection = ({ apartments }) => {
   return (
     <div className="py-8 px-14 flex justify-center flex-wrap space-x-4 w-full">
-      {appartments.map((room, i) => (
-        <Card appartment={room} key={i} />
+      {apartments.map((room, i) => (
+        <Card apartment={room} key={i} />
       ))}
-      {appartments.length < 1 && <span>No appartments yet!</span>}
+      {apartments.length < 1 && <span>No apartments yet!</span>}
     </div>
   )
 }
