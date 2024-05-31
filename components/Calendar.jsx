@@ -4,11 +4,13 @@ import { useState } from 'react'
 import { toast } from 'react-toastify'
 import DatePicker from 'react-datepicker'
 import { FaEthereum } from 'react-icons/fa'
+import { useSelector } from 'react-redux'
+import { bookApartment } from '@/services/blockchain'
 
 const Calendar = ({ apartment, timestamps }) => {
   const [checkInDate, setCheckInDate] = useState(null)
   const [checkOutDate, setCheckOutDate] = useState(null)
-  const securityFee = 5
+  const { securityFee } = useSelector((states) => states.globalStates)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -23,7 +25,7 @@ const Calendar = ({ apartment, timestamps }) => {
     }
 
     const params = {
-      aid: apartment?.id,
+      apartment_id: apartment?.id,
       timestamps: timestampArray,
       amount:
         apartment?.price * timestampArray.length +
@@ -32,15 +34,15 @@ const Calendar = ({ apartment, timestamps }) => {
 
     await toast.promise(
       new Promise(async (resolve, reject) => {
-        // await bookApartment(params)
-        //   .then(async () => {
-        //     resetForm()
-        //     resolve()
-        //   })
-        //   .catch(() => reject())
+        await bookApartment(params)
+          .then(async () => {
+            resetForm()
+            resolve()
+          })
+          .catch(() => reject())
       }),
       {
-        pending: 'Approve transaction...',
+        pending: 'Approving transaction...',
         success: 'Apartment booked successfully 👌',
         error: 'Encountered error 🤯',
       }

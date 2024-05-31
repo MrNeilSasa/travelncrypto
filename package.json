@@ -1,5 +1,5 @@
 {
-  "name": "dappbnb",
+  "name": "travelncypto",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -15,6 +15,7 @@
     ]
   },
   "dependencies": {
+    "@chainlink/contracts": "1.1.1",
     "@headlessui/react": "^1.7.17",
     "@rainbow-me/rainbowkit": "^1.0.10",
     "@rainbow-me/rainbowkit-siwe-next-auth": "^0.3.0",

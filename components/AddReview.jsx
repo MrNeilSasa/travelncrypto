@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { FaTimes } from 'react-icons/fa'
+import { globalActions } from '@/store/globalSlices'
+import { useDispatch, useSelector } from 'react-redux'
+import { addReview } from '@/services/blockchain'
 
 const AddReview = ({ roomId }) => {
   const [reviewText, setReviewText] = useState('')
-  const reviewModal = 'scale-0'
-
-  const closeModal = () => {}
+  const dispatch = useDispatch()
+  const { setReviewModal } = globalActions
+  const { reviewModal } = useSelector((states) => states.globalStates)
 
   const resetForm = () => {
     setReviewText('')
@@ -19,13 +22,13 @@ const AddReview = ({ roomId }) => {
 
     await toast.promise(
       new Promise(async (resolve, reject) => {
-        // await addReview(roomId, reviewText)
-        //   .then(async (tx) => {
-        //     dispatch(setReviewModal('scale-0'))
-        //     resetForm()
-        //     resolve(tx)
-        //   })
-        //   .catch(() => reject())
+        await addReview(roomId, reviewText)
+          .then(async (tx) => {
+            dispatch(setReviewModal('scale-0'))
+            resetForm()
+            resolve(tx)
+          })
+          .catch(() => reject())
       }),
       {
         pending: 'Approve transaction...',
@@ -47,7 +50,7 @@ const AddReview = ({ roomId }) => {
             <button
               type="button"
               className="border-0 bg-transparent focus:outline-none"
-              onClick={closeModal}
+              onClick={() => dispatch(setReviewModal('scale-0'))}
             >
               <FaTimes className="text-gray-400" />
             </button>
@@ -58,7 +61,7 @@ const AddReview = ({ roomId }) => {
               className="flex justify-center items-center rounded-full overflow-hidden
               h-10 w-40 shadow-md shadow-slate-300 p-4"
             >
-              <p className="text-lg font-bold text-slate-700"> DappBnB</p>
+              <p className="text-lg font-bold text-slate-700"> TravelnCrypto</p>
             </div>
           </div>
 
