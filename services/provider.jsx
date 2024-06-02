@@ -8,13 +8,13 @@ import {
   coinbaseWallet,
   rainbowWallet,
 } from '@rainbow-me/rainbowkit/wallets'
-import { mainnet, polygonMumbai, sepolia, hardhat } from 'wagmi/chains'
+import { mainnet, sepolia, hardhat } from 'wagmi/chains'
 import { alchemyProvider } from 'wagmi/providers/alchemy'
 import { publicProvider } from 'wagmi/providers/public'
 import { SessionProvider } from 'next-auth/react'
 
 const { chains, publicClient } = configureChains(
-  [mainnet, polygonMumbai, sepolia, hardhat],
+  [mainnet, sepolia, hardhat],
   [alchemyProvider({ apiKey: process.env.NEXT_PUBLIC_ALCHEMY_ID }), publicProvider()]
 )
 
@@ -39,13 +39,13 @@ const wagmiConfig = createConfig({
 })
 
 const demoAppInfo = {
-  appName: 'DappBnb dApp',
+  appName: 'TravelnCrypto dApp',
 }
 
 const getSiweMessageOptions = () => ({
   statement: `
   Once you're signed in, you'll be able to access all of our dApp's features.
-  Thank you for partnering with DappBnb!`,
+  Thank you for partnering with TravelnCrypto!`,
 })
 
 const Providers = ({ children, pageProps }) => {

@@ -1,6 +1,8 @@
 import { FaAirbnb } from 'react-icons/fa'
 import Link from 'next/link'
 import { ConnectBtn } from '.'
+import Image from 'next/image'
+import logo from 'public/TnClogo.png'
 
 const Header = () => {
   return (
@@ -9,10 +11,7 @@ const Header = () => {
     sm:px-10 md:px-14 border-b-2 border-b-slate-200 w-full"
     >
       <Link href={'/'}>
-        <p className="text-[#ff385c] flex items-center text-xl">
-          <FaAirbnb className=" font-semibold" />
-          DappBnb
-        </p>
+        <Image src={logo} height={75} />
       </Link>
 
       <ButtonGroup />
