@@ -6,7 +6,7 @@ export default function Home({ apartmentsData }) {
   return (
     <div>
       <Head>
-        <title>Home Page</title>
+        <title>TravelnCrypto</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 

@@ -1,14 +1,20 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/access/Ownable.sol';
-import '@openzeppelin/contracts/utils/Counters.sol';
-import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+
 
 contract TravelnCrypto is Ownable, ReentrancyGuard {
     
     using Counters for Counters.Counter;
     Counters.Counter private _totalApartments;
+
+    AggregatorV3Interface public ethUsdPriceFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
 
     struct Apartment {
         uint id;
@@ -53,9 +59,10 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
     mapping(address => mapping(uint => bool)) hasBooked;
     mapping(uint => bool) apartmentExist;
     
-    constructor(uint _taxPercent, uint _securityFee) {
+    constructor(address initialOwner, uint _taxPercent, uint _securityFee) Ownable(initialOwner) {
     taxPercent = _taxPercent;
     securityFee = _securityFee;
+    
   }
 
 
@@ -84,6 +91,7 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
         apartments[_totalApartments.current()] = apartment;
 
     }
+
 
     function currentTimestamp() internal view returns (uint256) {
         return (block.timestamp * 1000) + 1000;
@@ -130,9 +138,28 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
         apartment.price = price;
         apartments[id] = apartment;
 
+    }
+
+    function updatePrice(uint id, uint usdprice) external  {
+        require(apartmentExist[id] == true, 'Appartment not found');
+        
+    
+        apartments[id].price = (getPrice() * usdprice); 
+
 
     }
 
+    function sublet(uint id, uint newPrice ) public {
+        require(apartmentExist[id] == true, 'Appartment not found');
+        uint scaledNewPrice = newPrice * 100;
+        uint scaledOriginalPrice = apartments[id].price * 100;
+        require(
+            scaledNewPrice <= scaledOriginalPrice * 120 / 100,  
+            "New price cannot exceed 120% of the original price"
+        );
+
+        apartments[id].price = newPrice;
+    } 
     function deleteApartment(uint id) public {
         require(apartmentExist[id] == true, 'Apartment not found');
         require(apartments[id].owner == msg.sender, 'Unauthorized entity');
@@ -295,6 +322,16 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
 
 
   }
+
+    function getPrice() public  view returns(uint256){
+        (, int256 ethPrice, , , ) = ethUsdPriceFeed.latestRoundData();
+        //Price of ETH in terms of USD
+        //Price is in 8 decimal places and therefore must be raised by 1e10
+        return uint256(ethPrice * 1e10);
+    }
+
+
+
 
 
 }
