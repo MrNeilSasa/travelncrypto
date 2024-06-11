@@ -59,7 +59,7 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
     mapping(address => mapping(uint => bool)) hasBooked;
     mapping(uint => bool) apartmentExist;
     
-    constructor(address initialOwner, uint _taxPercent, uint _securityFee) Ownable(initialOwner) {
+    constructor(uint _taxPercent, uint _securityFee) {
     taxPercent = _taxPercent;
     securityFee = _securityFee;
     

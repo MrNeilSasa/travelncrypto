@@ -18,7 +18,6 @@ export default function Home({ apartmentsData }) {
 
 export const getServerSideProps = async () => {
   const apartmentsData = await getAllApartments()
-
   return {
     props: {
       apartmentsData: JSON.parse(JSON.stringify(apartmentsData)),

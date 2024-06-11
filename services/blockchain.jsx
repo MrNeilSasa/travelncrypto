@@ -17,6 +17,8 @@ if (typeof window !== 'undefined') {
 const { setBookings, setTimestamps, setReviews } = globalActions
 
 //Get Ethereum Contracts functions allows us to interact with the blockchain
+
+const readOnlyProvider = new ethers.JsonRpcProvider(process.env.ALCHEMY_SEPOLIA_URL)
 const getEthereumContracts = async () => {
   const accounts = await ethereum?.request?.({ method: 'eth_accounts' })
 
@@ -27,11 +29,12 @@ const getEthereumContracts = async () => {
 
     return contracts
   } else {
-    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL) //value needs to be changed in env based on mainnet or testnet
-    const wallet = ethers.Wallet.createRandom() //generates a random wallet address
-    const signer = wallet.connect(provider)
-    const contracts = new ethers.Contract(address.travelnCryptoContract, abi.abi, signer)
-
+    // //const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL) //value needs to be changed in env based on mainnet or testnet
+    // const provider = new ethers.JsonRpcProvider(process.env.ALCHEMY_SEPOLIA_URL)
+    // const wallet = ethers.Wallet.createRandom() //generates a random wallet address
+    // const signer = wallet.connect(provider)
+    // const contracts = new ethers.Contract(address.travelnCryptoContract, abi.abi, signer)
+    const contracts = new ethers.Contract(address.travelnCryptoContract, abi.abi, readOnlyProvider)
     return contracts
   }
 }
@@ -82,6 +85,8 @@ const getAllApartments = async () => {
   const contract = await getEthereumContracts()
 
   const apartments = await contract.getAllApartments()
+  console.log('Apartments: ', apartments)
+  console.log('Structured Apartments: ', structureApartments(apartments))
   return structureApartments(apartments)
 }
 

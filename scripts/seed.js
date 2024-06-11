@@ -4,8 +4,8 @@ const fs = require('fs')
 
 const toWei = (num) => ethers.parseEther(num.toString())
 
-const dataCount = 5
-const maxPrice = 3.5
+const dataCount = 1
+const maxPrice = 0.000005
 imagesUrls = [
   'https://images.unsplash.com/photo-1515263487990-61b07816b324?q=80&w=2370&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?im_w=720',
   'https://images.unsplash.com/photo-1628592102751-ba83b0314276?q=80&w=2597&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?im_w=720',
@@ -45,11 +45,8 @@ const generateFakeApartment = (count) => {
     const deleted = faker.datatype.boolean()
     const description = faker.lorem.paragraph()
     const location = faker.lorem.word()
-    const price = faker.number.float({
-      min: 0.1,
-      max: maxPrice,
-      precision: 0.01,
-    })
+    //const price = Math.random() * (maxPrice - 0.000001) + 0.000001
+    const priceInWei = BigInt(Math.floor(Math.random() * (maxPrice * 1e18 - 1e18) + 1e18))
     const rooms = faker.number.int({ min: 2, max: 5 })
     const owner = faker.string.hexadecimal({
       length: { min: 42, max: 42 },
@@ -67,7 +64,7 @@ const generateFakeApartment = (count) => {
       name,
       description,
       location,
-      price: toWei(price),
+      price: priceInWei, //toWei(price),
       images: images.join(', '),
       rooms,
       owner,
@@ -92,14 +89,16 @@ async function createApartments(contract, apartment) {
 }
 
 async function bookApartments(contract, aid, dates) {
-  const tx = await contract.bookApartment(aid, dates, { value: toWei(maxPrice * dates.length) })
+  const tx = await contract.bookApartment(aid, dates, {
+    value: BigInt(maxPrice * 1e18) * BigInt(dates.length),
+  })
   await tx.wait()
 }
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 async function main() {
-  let dappBnbContract
+  let travelnCryptoContract
 
   try {
     const contractAddresses = fs.readFileSync('./contracts/contractAddress.json', 'utf8')
@@ -116,7 +115,7 @@ async function main() {
     )
 
     await delay(2500) // Wait for 2.5 seconds
-
+    /*
     // Process #2
     await Promise.all(
       Array(dataCount)
@@ -124,7 +123,7 @@ async function main() {
         .map(async (_, i) => {
           await bookApartments(travelnCryptoContract, i + 1, dates1)
         })
-    )
+    ) */
 
     console.log('Items dummy data seeded...')
   } catch (error) {

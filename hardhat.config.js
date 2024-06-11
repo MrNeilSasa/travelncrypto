@@ -1,11 +1,14 @@
 require('@nomicfoundation/hardhat-toolbox')
 require('dotenv').config()
 
-const url = process.env.INFURA_SEPOLIA_RPC_URL
+const url = process.env.ALCHEMY_SEPOLIA_URL
 const privateKey = process.env.SEPOLIA_PRIVATE_KEY
 
 module.exports = {
-  defaultNetwork: 'localhost',
+  defaultNetwork: 'sepolia',
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY, // Or directly insert your API key here
+  },
   networks: {
     hardhat: {},
     sepolia: {

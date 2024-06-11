@@ -11,7 +11,7 @@ async function deployContract() {
     contract = await ethers.deployContract('TravelnCrypto', [taxPercentage, securityFeePercentage])
     await contract.waitForDeployment()
 
-    console.log('Contract Deployed')
+    console.log('Contract Deployed: ', contract)
     return contract
   } catch (error) {
     console.error('Error deploying contracts:', error)
