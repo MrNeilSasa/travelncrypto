@@ -90,7 +90,7 @@ export default function Add() {
               step={0.01}
               min={0.01}
               name="price"
-              placeholder="Price (ETH)"
+              placeholder="Price (USD)"
               onChange={(e) => setPrice(e.target.value)}
               value={price}
               required

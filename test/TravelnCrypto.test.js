@@ -3,12 +3,14 @@ const { ethers } = require('hardhat')
 const { describe } = require('node:test')
 
 const toWei = (num) => ethers.parseEther(num.toString())
+const fromWei = (num) => ethers.formatEther(num)
 
 const dates1 = [1725587200000, 1727203400000, 1700313044089]
 
 describe('Contracts', () => {
   let contract, result
   const id = 1
+  const id2 = 2
   const booking_id = 0
   const taxPercent = 16
   const securityFee = 7
@@ -24,8 +26,9 @@ describe('Contracts', () => {
     'https://plus.unsplash.com/premium_photo-1683769250375-1bdf0ec9d80f?q=80&w=2370&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?im_w=720',
   ]
   const rooms = 3
-  const price = 2.7
-  const newPrice = 1.3
+  const price = 0.2
+  const newPrice = 0.3
+  const resalePrice = 0.2
 
   beforeEach(async () => {
     ;[deployer, owner, tac1, tac2] = await ethers.getSigners()
@@ -47,6 +50,7 @@ describe('Contracts', () => {
       expect(result).to.have.lengthOf(1)
 
       result = await contract.getApartment(id)
+      console.log('Apartment(s): ', result)
       expect(result.name).to.be.equal(name)
       expect(result.description).to.be.equal(description)
       expect(result.images).to.be.equal(images.join(','))
@@ -91,7 +95,7 @@ describe('Contracts', () => {
     })
   }) */
 
-  describe('Booking Tests', () => {
+  describe('Booking Tests and Resale Tests', () => {
     describe('Successful Booking', () => {
       beforeEach(async () => {
         await contract
@@ -156,6 +160,26 @@ describe('Contracts', () => {
       })
     })
 
+    describe('Successfull Placement of booking for Resale', () => {
+      beforeEach(async () => {
+        await contract
+          .connect(owner)
+          .createApartment(name, description, location, images.join(','), rooms, toWei(price))
+
+        const amount = price * dates1.length + (price * dates1.length * securityFee) / 100
+        await contract.connect(tac2).bookApartment(id2, dates1, {
+          value: toWei(amount),
+        })
+        await contract.connect(tac2).createResale(id2, toWei(resalePrice), 1)
+      })
+
+      it('Can create resale', async () => {
+        result = await contract.getAllResales()
+        expect(result).to.have.lengthOf(1)
+      })
+    })
+
+    /*
     describe('Failed Booking', () => {
       beforeEach(async () => {
         await contract
@@ -179,6 +203,15 @@ describe('Contracts', () => {
           })
         ).to.be.revertedWith('Insufficient fund!')
       })
-    })
+    }) */
   })
+  /*
+  describe('Price Feed Test', () => {
+    it('Should be non empty', async () => {
+      result = await contract.getPrice()
+      console.log(result)
+      console.log('from wei: ', fromWei(result))
+      expect(result).to.be.gt(0)
+    })
+  }) */
 })

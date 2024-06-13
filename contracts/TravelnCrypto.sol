@@ -48,6 +48,13 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
         address owner;
     }
 
+
+    struct Resale {
+        uint price;
+        uint date;
+        address resller;
+    }
+
     uint public securityFee;
     uint public taxPercent;
 
@@ -59,6 +66,10 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
     mapping(address => mapping(uint => bool)) hasBooked;
     mapping(uint => bool) apartmentExist;
     
+    mapping(uint => Resale) public resales; //bookingId => Resale details
+    uint[] public resoldBookingIds;
+
+
     constructor(uint _taxPercent, uint _securityFee) {
     taxPercent = _taxPercent;
     securityFee = _securityFee;
@@ -141,7 +152,7 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
     }
 
     function updatePrice(uint id, uint usdprice) external  {
-        require(apartmentExist[id] == true, 'Appartment not found');
+        require(apartmentExist[id] == true, 'Apartment not found');
         
     
         apartments[id].price = (getPrice() * usdprice); 
@@ -149,17 +160,39 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
 
     }
 
-    function sublet(uint id, uint newPrice ) public {
-        require(apartmentExist[id] == true, 'Appartment not found');
+    function createResale(uint apartment_id, uint newPrice, uint booking_id ) public {
+        require(apartmentExist[apartment_id] == true, 'Apartment not found'); //Apartment must exist 
+        require(bookedDates[apartment_id].length > 0, "Apartment should be booked in order to be resold"); // Apartment must be booked
+        Booking memory booking = bookingsOf[apartment_id][booking_id];
+        require(msg.sender == booking.tenant, "Error: Unauthorized tenant!!");
+        require(!booking.checked, "Error: You cannot put apartment up for resell when you have already checkedIn for this date!!");
+
+
         uint scaledNewPrice = newPrice * 100;
-        uint scaledOriginalPrice = apartments[id].price * 100;
+        uint scaledOriginalPrice = apartments[apartment_id].price * 100;
         require(
             scaledNewPrice <= scaledOriginalPrice * 120 / 100,  
             "New price cannot exceed 120% of the original price"
         );
 
-        apartments[id].price = newPrice;
+        Resale memory resale;
+        resale.price = newPrice;
+        resale.date = booking.date;
+        resale.resller = booking.tenant;
+        resales[booking_id] = resale;
+        resoldBookingIds.push(booking_id);
     } 
+
+    function getAllResales() public view returns (Resale[] memory){
+        uint resaleCount = resoldBookingIds.length;
+        Resale[] memory allResales = new Resale[](resaleCount);
+        for (uint i = 0; i < resaleCount; i++) {
+            uint bookingId = resoldBookingIds[i];
+            allResales[i] = resales[bookingId];
+        }   
+        return allResales;
+    }
+
     function deleteApartment(uint id) public {
         require(apartmentExist[id] == true, 'Apartment not found');
         require(apartments[id].owner == msg.sender, 'Unauthorized entity');

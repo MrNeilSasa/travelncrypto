@@ -85,8 +85,6 @@ const getAllApartments = async () => {
   const contract = await getEthereumContracts()
 
   const apartments = await contract.getAllApartments()
-  console.log('Apartments: ', apartments)
-  console.log('Structured Apartments: ', structureApartments(apartments))
   return structureApartments(apartments)
 }
 
@@ -133,6 +131,7 @@ const createApartment = async (apartment) => {
     return Promise.reject(new Error('Browser provider not installed'))
   }
 
+  console.log('Apartment Price: ', apartment.price)
   try {
     const contract = await getEthereumContracts()
     tx = await contract.createApartment(
@@ -141,11 +140,51 @@ const createApartment = async (apartment) => {
       apartment.location,
       apartment.images,
       apartment.rooms,
-      toWei(apartment.price)
+      formatFromUSD(apartment.price)
     )
     await tx.wait()
 
     return Promise.resolve(tx)
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const formatFromUSD = async (price) => {
+  //The following If statement is to ensure the user has a connected wallet
+  console.log('Price to be formatted: ', price)
+  if (!ethereum) {
+    reportError('Please install a web3 wallet provider')
+    return Promise.reject(new Error('Web3 Wallet provider not installed'))
+  }
+  try {
+    const contract = await getEthereumContracts()
+    const ethTousd = await getPrice()
+    console.log('ETH-TO-USD ', ethTousd)
+    const rate = 1 / ethTousd
+    console.log('Rate: ', rate)
+    const priceTobeFormated = rate * price
+
+    const formatedPrice = toWei(priceTobeFormated)
+    console.log('FormatedPrice: ', formatedPrice)
+    return formatedPrice
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const getPrice = async () => {
+  if (!ethereum) {
+    reportError('Please install a web3 wallet provider')
+    return Promise.reject(new Error('Web3 Wallet provider not installed'))
+  }
+  try {
+    const contract = await getEthereumContracts()
+    const rate = await contract.getPrice()
+    console.log(fromWei(rate))
+    return fromWei(rate)
   } catch (error) {
     reportError(error)
     return Promise.reject(error)
