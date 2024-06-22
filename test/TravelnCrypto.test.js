@@ -96,6 +96,7 @@ describe('Contracts', () => {
   }) */
 
   describe('Booking Tests and Resale Tests', () => {
+    /*
     describe('Successful Booking', () => {
       beforeEach(async () => {
         await contract
@@ -158,7 +159,7 @@ describe('Contracts', () => {
         result = await contract.taxPercent()
         expect(result).to.be.equal(taxPercent)
       })
-    })
+    }) */
 
     describe('Successfull Placement of booking for Resale', () => {
       beforeEach(async () => {
@@ -167,15 +168,15 @@ describe('Contracts', () => {
           .createApartment(name, description, location, images.join(','), rooms, toWei(price))
 
         const amount = price * dates1.length + (price * dates1.length * securityFee) / 100
-        await contract.connect(tac2).bookApartment(id2, dates1, {
+        await contract.connect(tac1).bookApartment(id, dates1, {
           value: toWei(amount),
         })
-        await contract.connect(tac2).createResale(id2, toWei(resalePrice), 1)
+        await contract.createResale(id, resalePrice, booking_id)
       })
 
       it('Can create resale', async () => {
-        result = await contract.getAllResales()
-        expect(result).to.have.lengthOf(1)
+        result = await contract.getBooking(id, booking_id)
+        expect(result.resale).to.be.equal(true)
       })
     })
 

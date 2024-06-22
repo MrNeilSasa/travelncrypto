@@ -62,10 +62,12 @@ const structureBookings = (bookings) =>
       id: Number(booking.id),
       apartment_id: Number(booking.apartment_id),
       tenant: booking.tenant,
+      resale_tenant: booking.resale_tenant,
       date: Number(booking.date),
       price: fromWei(booking.price),
       checked: booking.checked,
       cancelled: booking.cancelled,
+      resale: booking.resale,
     }))
     .sort((a, b) => b.date - a.date)
     .reverse()
@@ -143,6 +145,36 @@ const createApartment = async (apartment) => {
       formatFromUSD(apartment.price)
     )
     await tx.wait()
+
+    return Promise.resolve(tx)
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
+const createResale = async (apartment_id, newPrice, booking_id) => {
+  if (!ethereum) {
+    reportError('Please install a browser provider')
+    return Promise.reject(new Error('Browser provider not installed'))
+  }
+  console.log('createResale called with:', { apartment_id, newPrice, booking_id })
+  try {
+    const contract = await getEthereumContracts()
+    console.log('Contract fetched:', contract)
+
+    if (!contract) {
+      throw new Error('Failed to get contract')
+    }
+    console.log('New Price: ', newPrice)
+    console.log('Creating resale transaction...')
+    tx = await contract.createResale(apartment_id, toWei(newPrice), booking_id)
+    console.log('Transaction sent:', tx)
+    await tx.wait()
+
+    const bookings = await getAllBookings(apartment_id)
+
+    store.dispatch(setBookings(bookings))
 
     return Promise.resolve(tx)
   } catch (error) {
@@ -259,8 +291,8 @@ const addReview = async (apartment_id, comment) => {
 
 const bookApartment = async ({ apartment_id, timestamps, amount }) => {
   if (!ethereum) {
-    reportError('Please install a web3 wallet provider')
-    return Promise.reject(new Error('Web3 Wallet provider not installed'))
+    reportError('Please install a browser provider')
+    return Promise.reject(new Error('Browser provider not installed'))
   }
 
   try {
@@ -271,7 +303,6 @@ const bookApartment = async ({ apartment_id, timestamps, amount }) => {
 
     await tx.wait()
 
-    await tx.wait()
     const bookedDates = await getBookedDates(apartment_id)
 
     store.dispatch(setTimestamps(bookedDates))
@@ -358,4 +389,5 @@ export {
   checkIn,
   refund,
   claimFunds,
+  createResale,
 }

@@ -1,12 +1,14 @@
 import Link from 'next/link'
+import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { toast } from 'react-toastify'
 import Identicon from 'react-identicons'
 import { formatDate, truncate } from '@/utils/helper'
-import { checkIn, claimFunds, refund } from '@/services/blockchain'
+import { checkIn, claimFunds, refund, createResale } from '@/services/blockchain'
 
 const Booking = ({ booking, apartment }) => {
   const { address } = useAccount()
+  const [newPrice, setNewPrice] = useState('')
 
   const handleCheckIn = async () => {
     await toast.promise(
@@ -60,6 +62,28 @@ const Booking = ({ booking, apartment }) => {
     )
   }
 
+  const handleResaleCreation = async () => {
+    console.log('Creating resale with newPrice:', newPrice)
+    await toast.promise(
+      new Promise(async (resolve, reject) => {
+        await createResale(booking.apartment_id, newPrice, booking.id)
+          .then(async (tx) => {
+            console.log(tx)
+            resolve(tx)
+          })
+          .catch((error) => reject(error))
+      }),
+      {
+        pending: 'Approving transaction...',
+        success: 'Booking successfully placed for resale 👌',
+        error: 'Encountered error 🤯',
+      }
+    )
+  }
+
+  const handleInputChange = (event) => {
+    setNewPrice(event.target.value) // Update state when input changes
+  }
   const bookedDayStatus = (booking) => {
     const bookedDate = new Date(booking.date).getTime()
     const current = new Date().getTime()
@@ -72,6 +96,8 @@ const Booking = ({ booking, apartment }) => {
     handleCheckIn,
     handleRefund,
     handleclaims,
+    handleResaleCreation,
+    handleInputChange,
   }
 
   return (
@@ -80,11 +106,13 @@ const Booking = ({ booking, apartment }) => {
       functions={functions}
       currentUser={address}
       apt_owner={apartment.owner}
+      newPrice={newPrice}
     />
   )
 }
 
-const TenantView = ({ booking, functions, currentUser, apt_owner }) => {
+const TenantView = ({ booking, functions, currentUser, apt_owner, newPrice }) => {
+  console.log('BOOKING: ', booking)
   return (
     <div className="w-full flex justify-between items-center my-3 bg-gray-100 p-3">
       <Link
@@ -120,6 +148,28 @@ const TenantView = ({ booking, functions, currentUser, apt_owner }) => {
           </button>
         </div>
       )}
+
+      {booking.tenant == currentUser &&
+        !booking.checked &&
+        !booking.cancelled &&
+        !booking.resale && (
+          <div className="flex space-x-2">
+            <input
+              type="number" // Restrict to numerical input
+              placeholder="Enter price for resale"
+              value={newPrice}
+              onChange={functions.handleInputChange}
+              className="border p-2 rounded-l" // Add styling (optional)
+            />
+            <button
+              className="p-2 bg-lime-500 text-white rounded-full text-sm px-4"
+              onClick={functions.handleResaleCreation}
+              disabled={!newPrice}
+            >
+              Resale
+            </button>
+          </div>
+        )}
 
       {booking.tenant == currentUser && booking.checked && !booking.cancelled && (
         <button

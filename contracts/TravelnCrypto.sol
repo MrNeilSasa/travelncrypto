@@ -34,10 +34,12 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
         uint id;
         uint apartment_id;
         address tenant;
+        address resale_tenant;
         uint date;
         uint price;
         bool checked;
         bool cancelled;
+        bool resale; 
     }
 
     struct Review {
@@ -51,8 +53,10 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
 
     struct Resale {
         uint price;
+        uint booking_id;
         uint date;
-        address resller;
+        address reseller;
+        address new_tenant;
     }
 
     uint public securityFee;
@@ -65,9 +69,11 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
     mapping(uint => mapping(uint => bool)) isDateBooked;
     mapping(address => mapping(uint => bool)) hasBooked;
     mapping(uint => bool) apartmentExist;
+    mapping(uint => bool) bookingExist;
     
-    mapping(uint => Resale) public resales; //bookingId => Resale details
+    mapping(uint => Resale) resales; //bookingId => Resale details
     uint[] public resoldBookingIds;
+    mapping(uint => uint) resale_price;
 
 
     constructor(uint _taxPercent, uint _securityFee) {
@@ -163,7 +169,7 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
     function createResale(uint apartment_id, uint newPrice, uint booking_id ) public {
         require(apartmentExist[apartment_id] == true, 'Apartment not found'); //Apartment must exist 
         require(bookedDates[apartment_id].length > 0, "Apartment should be booked in order to be resold"); // Apartment must be booked
-        Booking memory booking = bookingsOf[apartment_id][booking_id];
+        Booking memory booking = getBooking(apartment_id, booking_id);
         require(msg.sender == booking.tenant, "Error: Unauthorized tenant!!");
         require(!booking.checked, "Error: You cannot put apartment up for resell when you have already checkedIn for this date!!");
 
@@ -175,12 +181,8 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
             "New price cannot exceed 120% of the original price"
         );
 
-        Resale memory resale;
-        resale.price = newPrice;
-        resale.date = booking.date;
-        resale.resller = booking.tenant;
-        resales[booking_id] = resale;
-        resoldBookingIds.push(booking_id);
+        resale_price[booking_id] = newPrice;
+        bookingsOf[apartment_id][booking_id].resale = true;
     } 
 
     function getAllResales() public view returns (Resale[] memory){
@@ -213,11 +215,15 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
             booking.apartment_id = apartment_id;
             booking.id = bookingsOf[apartment_id].length;
             booking.tenant = msg.sender;
+            booking.resale_tenant = msg.sender;
             booking.date = dates[i];
             booking.price = apartments[apartment_id].price;
             bookingsOf[apartment_id].push(booking);
             isDateBooked[apartment_id][dates[i]] = true;
+            booking.resale = false;
             bookedDates[apartment_id].push(dates[i]);
+            bookingExist[booking.id] = true;
+
         }
     }
 
@@ -231,6 +237,33 @@ contract TravelnCrypto is Ownable, ReentrancyGuard {
             }
         }
         return lastCheck;
+    }
+
+    function bookResale(uint apartment_id, uint[] memory dates, uint[] memory booking_ids) public payable{
+        require(apartmentExist[apartment_id], "Error: Apartment cannot be found");
+        for(uint i =0; i < dates.length; i++){
+            
+            require(bookingExist[booking_ids[i]], "Error: Booking cannot be found");
+            Booking memory booking = bookingsOf[apartment_id][booking_ids[i]];
+            require(booking.resale == false, "You cannot book this date");
+            require(msg.value >= (resale_price[booking_ids[i]] * dates.length) + (((resale_price[booking_ids[i]] * dates.length) * securityFee)/100 ),
+            "Insufficient fund!" );
+            booking.resale_tenant = msg.sender;
+            Resale memory resale;
+            resale.price = resale_price[booking_ids[i]];
+            resale.booking_id = booking_ids[i];
+            resale.date = dates[i];
+            resale.reseller = booking.tenant;
+            resale.new_tenant = msg.sender;
+            resales[booking_ids[i]] = resale;
+
+        }
+        
+        
+
+
+
+
     }
 
     function checkIn(uint apartment_id, uint booking_id) public {
