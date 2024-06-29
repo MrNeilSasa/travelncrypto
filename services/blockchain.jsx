@@ -68,6 +68,7 @@ const structureBookings = (bookings) =>
       checked: booking.checked,
       cancelled: booking.cancelled,
       resale: booking.resale,
+      dateRebooked: booking.dateRebooked,
     }))
     .sort((a, b) => b.date - a.date)
     .reverse()
@@ -82,6 +83,18 @@ const structureReviews = (reviews) =>
       owner: review.owner,
     }))
     .sort((a, b) => b.timestamp - a.timestamp)
+
+const structureResales = (resales) =>
+  resales
+    .map((resale) => ({
+      price: fromWei(resale.price),
+      booking_id: Number(resale.booking_id),
+      date: Number(resale.date),
+      reseller: resale.reseller,
+      new_tenant: resale.new_tenant,
+    }))
+    .sort((a, b) => b.date - a.date)
+    .reverse()
 
 const getAllApartments = async () => {
   const contract = await getEthereumContracts()
@@ -373,6 +386,47 @@ const claimFunds = async (apartment_id, booking_id) => {
   }
 }
 
+const displayPrice = async (apartment, dates) => {
+  let price = 0
+  let regular_dates = []
+  let resale_dates = []
+
+  if (!ethereum) {
+    reportError('Please install a web3 wallet provider')
+    return Promise.reject(new Error('Web3 Wallet provider not installed'))
+  }
+
+  try {
+    const contract = await getEthereumContracts()
+    for (let i = 0; i < dates.length; i++) {
+      const resalePrice = await contract.getDisplayPrice(apartment.id, dates[i])
+      if (fromWei(resalePrice) == 0) {
+        price += Number(apartment.price)
+        console.log('Apartment Price in displayPrice:', price)
+        regular_dates.push(dates[i])
+      } else {
+        price += Number(fromWei(resalePrice))
+        console.log('Apartment Price in displayPrice after resale:', price)
+        resale_dates.push(dates[i])
+      }
+    }
+
+    const perDayPrice = price / dates.length
+
+    // Log the results
+    console.log('Total Price:', price)
+    console.log('Regular Dates:', regular_dates)
+    console.log('Resale Dates:', resale_dates)
+    console.log('Per Day Price:', perDayPrice)
+
+    // Return the results
+    return { price, regular_dates, resale_dates, perDayPrice }
+  } catch (error) {
+    reportError(error)
+    return Promise.reject(error)
+  }
+}
+
 export {
   getAllApartments,
   getApartment,
@@ -390,4 +444,5 @@ export {
   refund,
   claimFunds,
   createResale,
+  displayPrice,
 }

@@ -1,16 +1,46 @@
 import moment from 'moment'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'react-toastify'
 import DatePicker from 'react-datepicker'
 import { FaEthereum } from 'react-icons/fa'
 import { useSelector } from 'react-redux'
-import { bookApartment } from '@/services/blockchain'
+import { bookApartment, displayPrice } from '@/services/blockchain'
 
 const Calendar = ({ apartment, timestamps }) => {
   const [checkInDate, setCheckInDate] = useState(null)
   const [checkOutDate, setCheckOutDate] = useState(null)
+  const [resaleAmount, setResaleAmount] = useState(null)
+  const [bookingData, setBookingData] = useState({
+    price: 0,
+    regular_dates: [],
+    resale_dates: [],
+    perDayPrice: apartment?.price,
+  })
   const { securityFee } = useSelector((states) => states.globalStates)
+
+  const handleCalendarChange = async (apartment, dates) => {
+    try {
+      const data = await displayPrice(apartment, dates)
+      setBookingData(data)
+    } catch (error) {
+      console.error('Error fetching booking data:', error)
+    }
+  }
+
+  useEffect(() => {
+    if (checkInDate && checkOutDate) {
+      const dates = []
+      const start = moment(checkInDate)
+      const end = moment(checkOutDate)
+      while (start <= end) {
+        dates.push(start.valueOf())
+        start.add(1, 'days')
+      }
+      handleCalendarChange(apartment, dates)
+      console.log('Booking Data: ', bookingData)
+    }
+  }, [checkInDate, checkOutDate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -27,9 +57,7 @@ const Calendar = ({ apartment, timestamps }) => {
     const params = {
       apartment_id: apartment?.id,
       timestamps: timestampArray,
-      amount:
-        apartment?.price * timestampArray.length +
-        (apartment?.price * timestampArray.length * securityFee) / 100,
+      amount: bookingData.price,
     }
 
     await toast.promise(
@@ -65,7 +93,7 @@ const Calendar = ({ apartment, timestamps }) => {
         <div className="flex justify-center items-center">
           <FaEthereum className="text-lg text-gray-500" />
           <span className="text-lg text-gray-500">
-            {apartment?.price} <small>per night</small>
+            {bookingData.perDayPrice} <small>per day</small>
           </span>
         </div>
       </div>
