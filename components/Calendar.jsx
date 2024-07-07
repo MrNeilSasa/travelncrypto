@@ -10,7 +10,6 @@ import { bookApartment, displayPrice } from '@/services/blockchain'
 const Calendar = ({ apartment, timestamps }) => {
   const [checkInDate, setCheckInDate] = useState(null)
   const [checkOutDate, setCheckOutDate] = useState(null)
-  const [resaleAmount, setResaleAmount] = useState(null)
   const [bookingData, setBookingData] = useState({
     price: 0,
     regular_dates: [],
@@ -47,18 +46,14 @@ const Calendar = ({ apartment, timestamps }) => {
     if (!checkInDate || !checkOutDate) return
     const start = moment(checkInDate)
     const end = moment(checkOutDate)
-    const timestampArray = []
-
-    while (start <= end) {
-      timestampArray.push(start.valueOf())
-      start.add(1, 'days')
-    }
 
     const params = {
       apartment_id: apartment?.id,
-      timestamps: timestampArray,
-      amount: bookingData.price,
+      regular_timestamps: bookingData.regular_dates,
+      resale_timestamps: bookingData.resale_dates,
+      amount: bookingData.price + (bookingData.price * securityFee) / 100,
     }
+    console.log('Amount with security fee: ', params.amount)
 
     await toast.promise(
       new Promise(async (resolve, reject) => {

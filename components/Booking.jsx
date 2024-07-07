@@ -131,25 +131,27 @@ const TenantView = ({ booking, functions, currentUser, apt_owner, newPrice }) =>
         </div>
       </Link>
 
-      {booking.tenant == currentUser && !booking.checked && !booking.cancelled && (
-        <div className="flex space-x-2">
-          <button
-            className="p-2 bg-green-500 text-white rounded-full text-sm px-4"
-            onClick={functions.handleCheckIn}
-          >
-            Check In
-          </button>
+      {(booking.tenant === currentUser || booking.resale_tenant === currentUser) &&
+        !booking.checked &&
+        !booking.cancelled && (
+          <div className="flex space-x-2">
+            <button
+              className="p-2 bg-green-500 text-white rounded-full text-sm px-4"
+              onClick={functions.handleCheckIn}
+            >
+              Check In
+            </button>
 
-          <button
-            className="p-2 bg-red-500 text-white rounded-full text-sm px-4"
-            onClick={functions.handleRefund}
-          >
-            Refund
-          </button>
-        </div>
-      )}
+            <button
+              className="p-2 bg-red-500 text-white rounded-full text-sm px-4"
+              onClick={functions.handleRefund}
+            >
+              Refund
+            </button>
+          </div>
+        )}
 
-      {booking.tenant == currentUser &&
+      {(booking.tenant === currentUser || booking.resale_tenant === currentUser) &&
         !booking.checked &&
         !booking.cancelled &&
         !booking.resale && (
@@ -171,23 +173,27 @@ const TenantView = ({ booking, functions, currentUser, apt_owner, newPrice }) =>
           </div>
         )}
 
-      {booking.tenant == currentUser && booking.checked && !booking.cancelled && (
-        <button
-          className="p-2 bg-yellow-500 text-white font-medium italic
+      {(booking.tenant === currentUser || booking.resale_tenant === currentUser) &&
+        booking.checked &&
+        !booking.cancelled && (
+          <button
+            className="p-2 bg-yellow-500 text-white font-medium italic
         rounded-full text-sm px-4"
-        >
-          Checked In
-        </button>
-      )}
+          >
+            Checked In
+          </button>
+        )}
 
-      {booking.tenant != currentUser && !booking.cancelled && (
-        <button
-          className="p-2 bg-green-500 text-white font-medium italic
+      {booking.tenant != currentUser &&
+        booking.resale_tenant != currentUser &&
+        !booking.cancelled && (
+          <button
+            className="p-2 bg-green-500 text-white font-medium italic
         rounded-full text-sm px-4"
-        >
-          Booked
-        </button>
-      )}
+          >
+            Booked
+          </button>
+        )}
 
       {currentUser == apt_owner &&
         !booking.cancelled &&

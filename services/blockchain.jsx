@@ -68,6 +68,7 @@ const structureBookings = (bookings) =>
       checked: booking.checked,
       cancelled: booking.cancelled,
       resale: booking.resale,
+      booked: booking.booked,
       dateRebooked: booking.dateRebooked,
     }))
     .sort((a, b) => b.date - a.date)
@@ -180,8 +181,9 @@ const createResale = async (apartment_id, newPrice, booking_id) => {
       throw new Error('Failed to get contract')
     }
     console.log('New Price: ', newPrice)
-    console.log('Creating resale transaction...')
+    console.log('Creating resale transaction')
     tx = await contract.createResale(apartment_id, toWei(newPrice), booking_id)
+    console.log('Creating resale transaction...')
     console.log('Transaction sent:', tx)
     await tx.wait()
 
@@ -302,7 +304,7 @@ const addReview = async (apartment_id, comment) => {
   }
 }
 
-const bookApartment = async ({ apartment_id, timestamps, amount }) => {
+const bookApartment = async ({ apartment_id, regular_timestamps, resale_timestamps, amount }) => {
   if (!ethereum) {
     reportError('Please install a browser provider')
     return Promise.reject(new Error('Browser provider not installed'))
@@ -310,7 +312,7 @@ const bookApartment = async ({ apartment_id, timestamps, amount }) => {
 
   try {
     const contract = await getEthereumContracts()
-    tx = await contract.bookApartment(apartment_id, timestamps, {
+    tx = await contract.bookApartment(apartment_id, regular_timestamps, resale_timestamps, {
       value: toWei(amount),
     })
 
@@ -410,10 +412,11 @@ const displayPrice = async (apartment, dates) => {
         resale_dates.push(dates[i])
       }
     }
-
-    const perDayPrice = price / dates.length
+    price = roundTo10DecimalPlaces(price)
+    const perDayPrice = roundTo10DecimalPlaces(price / dates.length)
 
     // Log the results
+
     console.log('Total Price:', price)
     console.log('Regular Dates:', regular_dates)
     console.log('Resale Dates:', resale_dates)
@@ -425,6 +428,10 @@ const displayPrice = async (apartment, dates) => {
     reportError(error)
     return Promise.reject(error)
   }
+}
+
+function roundTo10DecimalPlaces(value) {
+  return Number(value.toFixed(17))
 }
 
 export {
