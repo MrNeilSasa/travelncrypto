@@ -33,7 +33,7 @@ const ImageSlider = ({ images }) => {
 const SlideImage = ({ src, alt }) => {
   return (
     <div className="w-full h-full relative">
-      <Image src={src} alt={alt} fill objectFit="cover" sizes="100vw" />
+      <img src={src} alt={alt} fill objectFit="cover" sizes="100vw" />
     </div>
   )
 }
